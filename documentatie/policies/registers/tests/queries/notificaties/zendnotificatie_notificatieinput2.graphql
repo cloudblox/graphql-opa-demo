@@ -1,0 +1,18 @@
+mutation ZendNotificatie($notificatieInput: NotificatieInput!, $notificatieInput2: NotificatieInput!, ) {
+    zendNotificatie(notificatieInput: $notificatieInput2) {
+        afzenderID
+        afzenderIDType
+        eventType
+        ontvangerID
+        ontvangerIDType
+        ontvangerKenmerk
+        timestamp
+        subjectList {
+            recordID
+            subject
+        }
+        ... on Notificatie {
+            notificatieID
+        }
+    }
+}

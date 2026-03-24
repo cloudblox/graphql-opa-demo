@@ -1,0 +1,78 @@
+query Bemiddelingspecificatie(
+  $BemiddelingspecificatieID: UUID!
+  $UitvoerendZorgkantoor: String!
+  $ToewijzingIngangsdatum: Date!
+  $ToewijzingEinddatum: Date!
+  $VaststellingMoment: Date!
+  $DagVaststellingMoment: Date!
+) {
+  bemiddelingspecificatie(
+    where: {
+      bemiddelingspecificatieID: { eq: $BemiddelingspecificatieID }
+      uitvoerendZorgkantoor: { eq: $UitvoerendZorgkantoor }
+      toewijzingIngangsdatum: { eq: $ToewijzingIngangsdatum }
+      toewijzingEinddatum: { eq: $ToewijzingEinddatum }
+      vaststellingMoment: { eq: $VaststellingMoment }
+    }
+  ) {
+    bemiddelingspecificatieID
+    leveringsvorm
+    zzpCode
+    toewijzingIngangsdatum
+    toewijzingEinddatum
+    instelling
+    uitvoerendZorgkantoor
+    vaststellingMoment
+    percentage
+    pgbPercentage
+    opname
+    redenIntrekking
+    etmalen
+    instellingBestemming
+    soortToewijzing
+    bemiddeling {
+      bemiddelingID
+      wlzIndicatieID
+      verantwoordelijkZorgkantoor
+      verantwoordelijkheidIngangsdatum
+      verantwoordelijkheidEinddatum
+      client {
+        bsn
+        leefeenheid
+        huisarts
+        communicatievorm
+        taal
+        clientID
+      }
+      bemiddelingspecificatie(
+        where: {
+          and: [
+            {
+              or: [
+                { toewijzingEinddatum: { eq: null } }
+                { toewijzingEinddatum: { gte: $ToewijzingIngangsdatum } }
+                { einddatum: { gte: $DagVaststellingMoment } }
+              ]
+            }
+            { ingangsdatum: { ngt: $ToewijzingEinddatum } }
+          ]
+        }
+      ) {
+        bemiddelingspecificatieID
+        leveringsvorm
+        zzpCode
+        toewijzingIngangsdatum
+        toewijzingEinddatum
+        instelling
+        uitvoerendZorgkantoor
+        vaststellingMoment
+        percentage
+        opname
+        redenIntrekking
+        etmalen
+        instellingBestemming
+        soortToewijzing
+      }
+    }
+  }
+}

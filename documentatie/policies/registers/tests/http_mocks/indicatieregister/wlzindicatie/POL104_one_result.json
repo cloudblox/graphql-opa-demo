@@ -1,0 +1,26 @@
+[
+    {
+        "Path": "/test1",
+        "Response": {
+            "data": {
+                "bemiddeling": [
+                    {
+                        "wlzIndicatieID": "ba7da7be-9952-4914-a384-5d997cb39132"
+                    }
+                ]
+            }
+        },
+        "StatusCode": 200
+    },
+    {
+        "Path": "/test2",
+        "Response": {
+            "data": {
+                "data": {
+                    "bemiddeling": []
+                }
+            }
+        },
+        "StatusCode": 200
+    }
+]

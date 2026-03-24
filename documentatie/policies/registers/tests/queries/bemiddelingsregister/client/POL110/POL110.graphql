@@ -1,0 +1,100 @@
+query Client($verantwoordelijkZorgkantoor: String!) {
+  client(
+    where: {
+      bemiddeling: {
+        some: {
+          verantwoordelijkZorgkantoor: { eq: $verantwoordelijkZorgkantoor }
+        }
+      }
+    }
+  ) {
+    clientID
+    bsn
+    leefeenheid
+    huisarts
+    communicatievorm
+    taal
+    contactpersoon {
+      contactpersoonID
+      relatienummer
+      volgorde
+      soortRelatie
+      rol
+      relatie
+      geslachtsnaam
+      voorvoegselGeslachtsnaam
+      partnernaam
+      voorvoegselPartnernaam
+      voornamen
+      voorletters
+      roepnaam
+      naamgebruik
+      geslacht
+      geboortedatum
+      geboortedatumgebruik
+      ingangsdatum
+      einddatum
+      contactgegevens {
+        contactpersoonContactgegevensID
+        adresSoort
+        straatnaam
+        huisnummer
+        huisletter
+        huisnummerToevoeging
+        postcode
+        plaatsnaam
+        land
+        aanduidingWoonadres
+        emailadres
+        telefoonnummer01
+        landnummer01
+        telefoonnummer02
+        landnummer02
+        ingangsdatum
+        einddatum
+      }
+    }
+    contactgegevens {
+      clientContactgegevensID
+      adresSoort
+      straatnaam
+      huisnummer
+      huisletter
+      huisnummerToevoeging
+      postcode
+      plaatsnaam
+      land
+      aanduidingWoonadres
+      emailadres
+      telefoonnummer01
+      landnummer01
+      telefoonnummer02
+      landnummer02
+      ingangsdatum
+      einddatum
+    }
+    bemiddeling {
+      bemiddelingID
+      wlzIndicatieID
+      verantwoordelijkZorgkantoor
+      verantwoordelijkheidIngangsdatum
+      verantwoordelijkheidEinddatum
+      bemiddelingspecificatie {
+        bemiddelingspecificatieID
+        leveringsvorm
+        zzpCode
+        toewijzingIngangsdatum
+        toewijzingEinddatum
+        instelling
+        uitvoerendZorgkantoor
+        vaststellingMoment
+        percentage
+        opname
+        redenIntrekking
+        etmalen
+        instellingBestemming
+        soortToewijzing
+      }
+    }
+  }
+}

@@ -1,0 +1,115 @@
+query Overdracht(
+  $overdrachtID: UUID!
+  $VerantwoordelijkZorgkantoor: String!
+) {
+  overdracht(
+    where: {
+      overdrachtID: { eq: $overdrachtID }
+      verantwoordelijkZorgkantoor: { eq: $VerantwoordelijkZorgkantoor }
+    }
+  ) {
+    overdrachtID
+    verantwoordelijkZorgkantoor
+    overdrachtDatum
+    verhuisDatum
+    vaststellingMoment
+    bemiddeling {
+      bemiddelingID
+      wlzIndicatieID
+      verantwoordelijkZorgkantoor
+      verantwoordelijkheidIngangsdatum
+      verantwoordelijkheidEinddatum
+      client {
+        clientID
+        bsn
+        leefeenheid
+        huisarts
+        communicatievorm
+        taal
+        contactgegevens {
+          clientContactgegevensID
+          adressoort
+          straatnaam
+          huisnummer
+          huisletter
+          huisnummertoevoeging
+          postcode
+          plaatsnaam
+          land
+          emailadres
+          telefoonnummer01
+          landnummer01
+          telefoonnummer02
+          landnummer02
+          ingangsdatum
+          einddatum
+        }
+        contactpersoon {
+          contactpersoonID
+          contactgegevens {
+            contactpersoonContactgegevensID
+            adressoort
+            straatnaam
+            huisnummer
+            huisnummertoevoeging
+            postcode
+            plaatsnaam
+            land
+            emailadres
+            telefoonnummer01
+            landnummer01
+            telefoonnummer02
+            landnummer02
+            ingangsdatum
+            einddatum
+          }
+          relatienummer
+          volgorde
+          soortRelatie
+          rol
+          relatienummer
+          geslachtsnaam
+          voorvoegselGeslachtsnaam
+          voornamen
+          voorletters
+          roepnaam
+          naamgebruik
+          geslacht
+          geboortedatum
+          geboortedatumgebruik
+          ingangsdatum
+          einddatum
+        }
+      }
+      regiehouder {
+        regiehouderID
+        instelling
+        ingangsdatum
+        einddatum
+        regierol
+      }
+    }
+    overdrachtspecificatie {
+      overdrachtspecificatieID
+      leveringsstatus
+      leveringsstatusClassificatie
+      oorspronkelijkeToewijzingEinddatum
+      bemiddelingspecificatie {
+        bemiddelingspecificatieID
+        leveringsvorm
+        zzpCode
+        toewijzingIngangsdatum
+        toewijzingEinddatum
+        instelling
+        uitvoerendZorgkantoor
+        vaststellingMoment
+        percentage
+        opname
+        redenIntrekking
+        etmalen
+        instellingBestemming
+        soortToewijzing
+      }
+    }
+  }
+}

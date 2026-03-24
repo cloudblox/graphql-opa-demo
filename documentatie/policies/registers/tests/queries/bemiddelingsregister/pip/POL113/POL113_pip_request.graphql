@@ -1,0 +1,22 @@
+query GetBemiddeling($wlzIndicatieID: UUID!, $zorgkantoor: String!) {
+  bemiddeling(
+    where: {
+      wlzIndicatieID: { eq: $wlzIndicatieID }
+      verantwoordelijkZorgkantoor: { neq: $zorgkantoor }
+      or: [
+        {
+          bemiddelingspecificatie: {
+            some: { uitvoerendZorgkantoor: { eq: $zorgkantoor } }
+          }
+        }
+        {
+          overdracht: {
+            verantwoordelijkZorgkantoor: { eq: $zorgkantoor } 
+          }
+        }
+      ]
+    }
+  ) {
+    wlzIndicatieID
+  }
+}

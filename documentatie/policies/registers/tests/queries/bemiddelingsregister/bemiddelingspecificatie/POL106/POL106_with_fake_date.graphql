@@ -1,0 +1,78 @@
+query Bemiddelingspecificatie(
+  $BemiddelingspecificatieID: UUID!
+  $UitvoerendZorgkantoor: String!
+  $ToewijzingIngangsdatum: Date!
+  $ToewijzingEinddatum: Date!
+  $VaststellingMoment: DateTime!
+  $FakeDate: Date!
+) {
+  bemiddelingspecificatie(
+    where: {
+      bemiddelingspecificatieID: { eq: $BemiddelingspecificatieID }
+      uitvoerendZorgkantoor: { eq: $UitvoerendZorgkantoor }
+      toewijzingIngangsdatum: { eq: $ToewijzingIngangsdatum }
+      toewijzingEinddatum: { eq: $ToewijzingEinddatum }
+      vaststellingMoment: { eq: $VaststellingMoment }
+    }
+  ) {
+    bemiddelingspecificatieID
+    leveringsvorm
+    zzpCode
+    toewijzingIngangsdatum
+    toewijzingEinddatum
+    instelling
+    uitvoerendZorgkantoor
+    vaststellingMoment
+    percentage
+    pgbPercentage
+    opname
+    redenIntrekking
+    etmalen
+    instellingBestemming
+    soortToewijzing
+    bemiddeling {
+      bemiddelingID
+      wlzIndicatieID
+      verantwoordelijkZorgkantoor
+      verantwoordelijkheidIngangsdatum
+      verantwoordelijkheidEinddatum
+      client {
+        bsn
+        contactpersoon(
+          where: {
+            and: [
+              {
+                or: [
+                  { einddatum: { eq: null } }
+                  { einddatum: { gte: $FakeDate } }
+                  { einddatum: { gte: $FakeDate } }
+                ]
+              }
+              { ingangsdatum: { ngt: $FakeDate } }
+            ]
+          }
+        ) {
+          contactpersoonID
+          relatienummer
+          volgorde
+          soortRelatie
+          rol
+          relatie
+          geslachtsnaam
+          voorvoegselGeslachtsnaam
+          partnernaam
+          voorvoegselPartnernaam
+          voornamen
+          voorletters
+          roepnaam
+          naamgebruik
+          geslacht
+          geboortedatum
+          geboortedatumgebruik
+          ingangsdatum
+          einddatum
+        }
+      }
+    }
+  }
+}

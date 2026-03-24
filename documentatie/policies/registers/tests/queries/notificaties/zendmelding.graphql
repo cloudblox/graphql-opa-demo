@@ -1,0 +1,15 @@
+mutation ZendMelding($meldingInput: MeldingInput!) {
+    zendMelding(meldingInput: $meldingInput) {
+        afzenderID
+        afzenderIDType
+        eventType
+        ontvangerID
+        ontvangerIDType
+        ontvangerKenmerk
+        timestamp
+        subjectList {
+            recordID
+            subject
+        }
+    }
+}

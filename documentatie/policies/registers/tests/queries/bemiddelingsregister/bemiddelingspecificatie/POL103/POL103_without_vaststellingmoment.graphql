@@ -1,0 +1,194 @@
+query Bemiddelingspecificatie(
+  $BemiddelingspecificatieID: UUID!
+  $Instelling: String!
+  $ToewijzingIngangsdatum: Date!
+  $ToewijzingEinddatum: Date!
+  $VaststellingMoment: DateTime!
+  $DagVaststellingMoment: Date!
+) {
+  bemiddelingspecificatie(
+    where: {
+      bemiddelingspecificatieID: { eq: $BemiddelingspecificatieID }
+      instelling: { eq: $Instelling }
+      toewijzingIngangsdatum: { eq: $ToewijzingIngangsdatum }
+      toewijzingEinddatum: { eq: $ToewijzingEinddatum }
+    }
+  ) {
+    bemiddelingspecificatieID
+    leveringsvorm
+    zzpCode
+    toewijzingIngangsdatum
+    toewijzingEinddatum
+    instelling
+    uitvoerendZorgkantoor
+    vaststellingMoment
+    percentage
+    opname
+    redenIntrekking
+    etmalen
+    instellingBestemming
+    soortToewijzing
+    bemiddeling {
+      bemiddelingID
+      wlzIndicatieID
+      verantwoordelijkZorgkantoor
+      verantwoordelijkheidIngangsdatum
+      verantwoordelijkheidEinddatum
+      client {
+        bsn
+        contactpersoon(
+          where: {
+            and: [
+              {
+                or: [
+                  { einddatum: { eq: null } }
+                  { einddatum: { gte: $ToewijzingIngangsdatum } }
+                  { einddatum: { gte: $DagVaststellingMoment } }
+                ]
+              }
+              { ingangsdatum: { ngt: $ToewijzingEinddatum } }
+            ]
+          }
+        ) {
+          contactpersoonID
+          relatienummer
+          volgorde
+          soortRelatie
+          rol
+          relatie
+          geslachtsnaam
+          voorvoegselGeslachtsnaam
+          partnernaam
+          voorvoegselPartnernaam
+          voornamen
+          voorletters
+          roepnaam
+          naamgebruik
+          geslacht
+          geboortedatum
+          geboortedatumgebruik
+          ingangsdatum
+          einddatum
+          contactgegevens(
+            where: {
+              and: [
+                {
+                  or: [
+                    { einddatum: { eq: null } }
+                    { einddatum: { gte: $ToewijzingIngangsdatum } }
+                    { einddatum: { gte: $DagVaststellingMoment } }
+                  ]
+                }
+                { ingangsdatum: { ngt: $ToewijzingEinddatum } }
+              ]
+            }
+          ) {
+            contactpersoonContactgegevensID
+            adressoort
+            straatnaam
+            huisnummer
+            huisletter
+            huisnummertoevoeging
+            postcode
+            plaatsnaam
+            land
+            aanduidingWoonadres
+            emailadres
+            telefoonnummer01
+            landnummer01
+            telefoonnummer02
+            landnummer02
+            ingangsdatum
+            einddatum
+          }
+        }
+        leefeenheid
+        huisarts
+        communicatievorm
+        taal
+        contactgegevens(
+          where: {
+            and: [
+              {
+                or: [
+                  { einddatum: { eq: null } }
+                  { einddatum: { gte: $ToewijzingIngangsdatum } }
+                  { einddatum: { gte: $DagVaststellingMoment } }
+                ]
+              }
+              { ingangsdatum: { ngt: $ToewijzingEinddatum } }
+            ]
+          }
+        ) {
+          clientContactgegevensID
+          adressoort
+          straatnaam
+          huisnummer
+          huisletter
+          huisnummertoevoeging
+          postcode
+          plaatsnaam
+          land
+          aanduidingWoonadres
+          emailadres
+          telefoonnummer01
+          landnummer01
+          telefoonnummer02
+          landnummer02
+          ingangsdatum
+          einddatum
+        }
+        clientID
+      }
+      bemiddelingspecificatie(
+        where: {
+          and: [
+            {
+              or: [
+                { toewijzingEinddatum: { eq: null } }
+                { toewijzingEinddatum: { gte: $ToewijzingIngangsdatum } }
+                { toewijzingEinddatum: { gte: $DagVaststellingMoment } }
+              ]
+            }
+            { toewijzingIngangsdatum: { ngt: $ToewijzingEinddatum } }
+          ]
+        }
+      ) {
+        bemiddelingspecificatieID
+        leveringsvorm
+        zzpCode
+        toewijzingIngangsdatum
+        toewijzingEinddatum
+        instelling
+        uitvoerendZorgkantoor
+        vaststellingMoment
+        percentage
+        opname
+        redenIntrekking
+        etmalen
+        instellingBestemming
+        soortToewijzing
+      }
+      regiehouder(
+          where: {
+            and: [
+              {
+                or: [
+                  { einddatum: { eq: null } }
+                  { einddatum: { gte: $ToewijzingIngangsdatum } }
+                  { einddatum: { gte: $DagVaststellingMoment } }
+                ]
+              }
+              { ingangsdatum: { ngt: $ToewijzingEinddatum } }
+            ]
+          }
+        ) {
+          regiehouderID
+          instelling
+          ingangsdatum
+          einddatum
+          regierol
+        }
+      }
+    }
+  }

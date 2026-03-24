@@ -1,0 +1,147 @@
+query Overdracht(
+  $overdrachtID: UUID!
+  $VerantwoordelijkZorgkantoor: String!
+  $OverdrachtDatum: Date!
+  $NepDatum: Date!
+  $OverdrachtDatumMinus1Dag: Date!
+) {
+  overdracht(
+    where: {
+      overdrachtID: { eq: $overdrachtID }
+      verantwoordelijkZorgkantoor: { eq: $VerantwoordelijkZorgkantoor }
+      overdrachtDatum: { eq: $OverdrachtDatum }
+    }
+  ) {
+    overdrachtID
+    verantwoordelijkZorgkantoor
+    overdrachtDatum
+    verhuisDatum
+    vaststellingMoment
+    bemiddeling {
+      bemiddelingID
+      wlzIndicatieID
+      verantwoordelijkZorgkantoor
+      verantwoordelijkheidIngangsdatum
+      verantwoordelijkheidEinddatum
+      client {
+        clientID
+        bsn
+        leefeenheid
+        huisarts
+        communicatievorm
+        taal
+        contactgegevens(
+          where: {
+            or: [
+              { einddatum: { gt: $NepDatum } }
+              { einddatum: { eq: null } }
+            ]
+          }
+        ) {
+          clientContactgegevensID
+          adressoort
+          straatnaam
+          huisnummer
+          huisletter
+          huisnummertoevoeging
+          postcode
+          plaatsnaam
+          land
+          emailadres
+          telefoonnummer01
+          landnummer01
+          telefoonnummer02
+          landnummer02
+          ingangsdatum
+          einddatum
+        }
+        contactpersoon(
+          where: {
+            or: [
+              { einddatum: { gt: $NepDatum } }
+              { einddatum: { eq: null } }
+            ]
+          }
+        ) {
+          contactpersoonID
+          contactgegevens(
+            where: {
+              or: [
+                { einddatum: { gt: $NepDatum } }
+                { einddatum: { eq: null } }
+              ]
+            }
+          ) {
+            contactpersoonContactgegevensID
+            adressoort
+            straatnaam
+            huisnummer
+            huisnummertoevoeging
+            postcode
+            plaatsnaam
+            land
+            emailadres
+            telefoonnummer01
+            landnummer01
+            telefoonnummer02
+            landnummer02
+            ingangsdatum
+            einddatum
+          }
+          relatienummer
+          volgorde
+          soortRelatie
+          rol
+          relatienummer
+          geslachtsnaam
+          voorvoegselGeslachtsnaam
+          voornamen
+          voorletters
+          roepnaam
+          naamgebruik
+          geslacht
+          geboortedatum
+          geboortedatumgebruik
+          ingangsdatum
+          einddatum
+        }
+      }
+      regiehouder(
+        where: {
+          or: [
+            { einddatum: { gt: $NepDatum } }
+            { einddatum: { eq: null } }
+          ]
+        }
+      ) {
+        regiehouderID
+        instelling
+        ingangsdatum
+        einddatum
+        regierol
+      }
+    }
+    overdrachtspecificatie {
+      overdrachtspecificatieID
+      leveringsstatus
+      leveringsstatusClassificatie
+      oorspronkelijkeToewijzingEinddatum
+      bemiddelingspecificatie {
+        bemiddelingspecificatieID
+        leveringsvorm
+        zzpCode
+        toewijzingIngangsdatum
+        toewijzingEinddatum
+        instelling
+        uitvoerendZorgkantoor
+        vaststellingMoment
+        percentage
+        opname
+        redenIntrekking
+        etmalen
+        instellingBestemming
+        soortToewijzing
+      }
+    }
+  }
+}

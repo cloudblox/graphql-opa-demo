@@ -1,0 +1,22 @@
+[
+    {
+        "Path": "/test1",
+        "Response": {
+            "data": {
+                "bemiddeling": []
+            }
+        },
+        "StatusCode": 200
+    },
+    {
+        "Path": "/test2",
+        "Response": {
+            "data": {
+                "data": {
+                    "bemiddeling": []
+                }
+            }
+        },
+        "StatusCode": 200
+    }
+]

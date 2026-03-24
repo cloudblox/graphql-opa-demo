@@ -1,0 +1,8 @@
+query multipleSelections {
+  selectionOne {
+    something
+  }
+  selectionTwo {
+    something
+  }
+}

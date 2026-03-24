@@ -1,0 +1,49 @@
+query Bemiddelingspecificatie(
+  $BemiddelingspecificatieID: UUID!
+  $Instelling: String!
+) {
+  bemiddelingspecificatie(
+    where: {
+      bemiddelingspecificatieID: { eq: $BemiddelingspecificatieID }
+      instelling: { eq: $Instelling }
+    }
+  ) {
+    bemiddelingspecificatieID
+    leveringsvorm
+    zzpCode
+    toewijzingIngangsdatum
+    toewijzingEinddatum
+    instelling
+    uitvoerendZorgkantoor
+    vaststellingMoment
+    percentage
+    opname
+    redenIntrekking
+    etmalen
+    instellingBestemming
+    soortToewijzing
+    bemiddeling {
+      bemiddelingID
+      wlzIndicatieID
+      verantwoordelijkZorgkantoor
+      verantwoordelijkheidIngangsdatum
+      verantwoordelijkheidEinddatum
+      client {
+        bsn
+        clientID
+        taal
+        communicatievorm
+        huisarts
+        leefeenheid
+        # This is not allowed (can give other bemiddelingen via the client)
+        bemiddeling {
+          bemiddelingID
+          wlzIndicatieID
+          verantwoordelijkZorgkantoor
+          verantwoordelijkheidIngangsdatum
+          verantwoordelijkheidEinddatum
+        }
+      }
+    }
+  }
+}

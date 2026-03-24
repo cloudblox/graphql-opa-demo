@@ -1,0 +1,125 @@
+# Query
+query Bemiddelingspecificatie(
+  $BemiddelingspecificatieID: UUID!
+  $Instelling: String!
+) {
+  bemiddelingspecificatie(
+    where: {
+      bemiddelingspecificatieID: { eq: $BemiddelingspecificatieID }
+      instelling: { eq: $Instelling }
+    }
+  ) {
+    bemiddelingspecificatieID
+    leveringsvorm
+    zzpCode
+    toewijzingIngangsdatum
+    toewijzingEinddatum
+    instelling
+    uitvoerendZorgkantoor
+    vaststellingMoment
+    percentage
+    pgbPercentage
+    opname
+    redenIntrekking
+    etmalen
+    instellingBestemming
+    soortToewijzing
+    bemiddeling {
+      bemiddelingID
+      wlzIndicatieID
+      verantwoordelijkZorgkantoor
+      verantwoordelijkheidIngangsdatum
+      verantwoordelijkheidEinddatum
+      client {
+        bsn
+        contactpersoon {
+          contactpersoonID
+          relatienummer
+          volgorde
+          soortRelatie
+          rol
+          relatie
+          geslachtsnaam
+          voorvoegselGeslachtsnaam
+          partnernaam
+          voorvoegselPartnernaam
+          voornamen
+          voorletters
+          roepnaam
+          naamgebruik
+          geslacht
+          geboortedatum
+          geboortedatumgebruik
+          ingangsdatum
+          einddatum
+          contactgegevens {
+            contactpersoonContactgegevensID
+            adressoort
+            straatnaam
+            huisnummer
+            huisletter
+            huisnummertoevoeging
+            postcode
+            plaatsnaam
+            land
+            aanduidingWoonadres
+            emailadres
+            telefoonnummer01
+            landnummer01
+            telefoonnummer02
+            landnummer02
+            ingangsdatum
+            einddatum
+          }
+        }
+        leefeenheid
+        huisarts
+        communicatievorm
+        taal
+        contactgegevens {
+          clientContactgegevensID
+          adressoort
+          straatnaam
+          huisnummer
+          huisletter
+          huisnummertoevoeging
+          postcode
+          plaatsnaam
+          land
+          aanduidingWoonadres
+          emailadres
+          telefoonnummer01
+          landnummer01
+          telefoonnummer02
+          landnummer02
+          ingangsdatum
+          einddatum
+        }
+        clientID
+      }
+      bemiddelingspecificatie {
+        bemiddelingspecificatieID
+        leveringsvorm
+        zzpCode
+        toewijzingIngangsdatum
+        toewijzingEinddatum
+        instelling
+        uitvoerendZorgkantoor
+        vaststellingMoment
+        percentage
+        opname
+        redenIntrekking
+        etmalen
+        instellingBestemming
+        soortToewijzing
+      }
+      regiehouder {
+        regiehouderID
+        instelling
+        ingangsdatum
+        einddatum
+        regierol
+      }
+    }
+  }
+}

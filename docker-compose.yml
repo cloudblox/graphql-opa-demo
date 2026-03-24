@@ -1,0 +1,29 @@
+services:
+  app:
+    build:
+      context: ./app
+    environment:
+      PORT: "4000"
+      OPA_URL: http://opa:8181/v1/data/authz/result
+    ports:
+      - "4000:4000"
+    depends_on:
+      - opa
+
+  opa:
+    image: openpolicyagent/opa:1.2.0-static
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--set=decision_logs.console=true"
+      - "/bundle"
+    environment:
+      JWKS_URI: token_validation_disabled
+      ENV: feature_tests
+      PEP_URL: http://app:4000/graphql
+      AUTH_SERVER_URL: http://auth-not-used.invalid/token
+    volumes:
+      - ./opa/bundle:/bundle:ro
+    ports:
+      - "8181:8181"

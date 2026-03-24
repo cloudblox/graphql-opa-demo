@@ -1,0 +1,9 @@
+query multipleOperationsOne
+{
+ operation
+}
+
+query multipleOperationsTwo
+{
+ operation
+}

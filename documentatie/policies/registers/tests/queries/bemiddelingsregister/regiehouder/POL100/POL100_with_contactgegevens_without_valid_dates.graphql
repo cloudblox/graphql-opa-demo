@@ -1,0 +1,52 @@
+query Regiehouder(
+  $regiehouderID: UUID!
+  $Instelling: String!
+) {
+  regiehouder(
+    where: {
+      regiehouderID: { eq: $regiehouderID }
+      instelling: { eq: $Instelling }
+    }
+  ) {
+    regiehouderID
+    instelling
+    ingangsdatum
+    einddatum
+    regierol
+    bemiddeling {
+      bemiddelingID
+      wlzIndicatieID
+      verantwoordelijkZorgkantoor
+      verantwoordelijkheidIngangsdatum
+      verantwoordelijkheidEinddatum
+      # Sub entiteiten van de bemiddeling mag je niet ophalen zonder datumfilter - zie QBR-0002-ZA.graphql
+      client {
+        bsn
+        clientID
+        taal
+        communicatievorm
+        huisarts
+        leefeenheid
+        contactgegevens {
+          contactpersoonContactgegevensID
+          adressoort
+          straatnaam
+          huisnummer
+          huisletter
+          huisnummertoevoeging
+          postcode
+          plaatsnaam
+          land
+          aanduidingWoonadres
+          emailadres
+          telefoonnummer01
+          landnummer01
+          telefoonnummer02
+          landnummer02
+          ingangsdatum
+          einddatum
+        }
+      }
+    }
+  }
+}

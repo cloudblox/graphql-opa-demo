@@ -1,0 +1,10 @@
+query GetBemiddeling($wlzIndicatieID: UUID!, $instelling: String!) {
+  bemiddeling(
+    where: {
+      wlzIndicatieID: { eq: $wlzIndicatieID }
+      bemiddelingspecificatie: { some: { instelling: { eq: $instelling } } }
+    }
+  ) {
+    wlzIndicatieID
+  }
+}
