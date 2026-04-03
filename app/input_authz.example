@@ -1,0 +1,18 @@
+  "subject": {
+    "id": "demo-subject",
+    "organization_type": "ZORGKANTOOR",
+    "roles": [
+      "RAADPLEGER"
+    ]
+  },
+  "action": "read",
+  "resource": {
+    "type": "WLZ_INDICATIE",
+    "id": "11111111-1111-1111-1111-111111111111"
+  },
+  "context": {
+    "service": "INDICATIEREGISTER",
+    "operation": "raadpleegIndicatie",
+    "source": "graphql_authz"
+  }
+}

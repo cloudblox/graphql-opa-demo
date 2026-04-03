@@ -1,0 +1,18 @@
+"input": {
+  "parsed_body": {
+    "query": "query WlzIndicatie($wlzIndicatieID: ID!, $initieelVerantwoordelijkZorgkantoor: String!) { wlzIndicatie(where: { wlzindicatieID: {eq: $wlzIndicatieID}, initieelVerantwoordelijkZorgkantoor: {eq: $initieelVerantwoordelijkZorgkantoor} }) { wlzindicatieID bsn besluitnummer soortWlzindicatie initieelVerantwoordelijkZorgkantoor client { clientID bsn voornamen roepnaam } } }",
+    "variables": {
+      "wlzIndicatieID": "11111111-1111-1111-1111-111111111111",
+      "initieelVerantwoordelijkZorgkantoor": "5500"
+    }
+  },
+  "attributes": {
+    "request": {
+      "http": {
+        "headers": {
+          "authorization": "Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJpc3MiOiJhdXRoLm5pZCIsInN1YiI6ImRlbW8tdXNlciIsImlhdCI6MTc3NDM1NjQ3MywibmJmIjoxNzc0MzU2NDYzLCJleHAiOjE3NzQzNjAwNzMsInNjb3BlcyI6WyJyZWdpc3RlcnMvd2x6YmVtaWRkZWxpbmdzcmVnaXN0ZXIiLCJyZWdpc3RlcnMvd2x6aW5kaWNhdGllcmVnaXN0ZXIvaW5kaWNhdGllcy9pbmRpY2F0aWU6cmVhZCJdLCJpbnN0YW50aWVfdHlwZSI6IlpvcmdrYW50b29yIiwidXpvdmkiOiI1NTAwIn0."
+        }
+      }
+    }
+  }
+}
