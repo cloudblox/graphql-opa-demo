@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuthZ Operation-Centric Rego Explorer</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-2: #111827;
+      --panel: #1e293b;
+      --border: #334155;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --active: #22c55e;
+      --button: #2563eb;
+      --button-hover: #1d4ed8;
+      --code-bg: #020617;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      padding: 24px;
+      background: #0b1220;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .topbar {
+      padding: 16px 24px 8px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toolbar {
+      padding: 8px 24px 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .toolbar-group {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+    }
+
+    .toolbar-group h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: var(--accent);
+    }
+
+    .button-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      background: var(--button);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    button:hover {
+      background: var(--button-hover);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      padding: 0 24px 24px;
+    }
+
+    .panel {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .stack,
+    .flow,
+    .branches,
+    .files {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .item {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      transition: all 0.2s ease;
+    }
+
+    .item.active {
+      background: #14532d;
+      border-color: var(--active);
+      box-shadow: 0 0 0 1px rgba(34,197,94,0.25) inset;
+    }
+
+    .arrow {
+      margin-left: 8px;
+      color: var(--muted);
+      font-size: 20px;
+    }
+
+    .viewer {
+      grid-column: 1 / span 3;
+    }
+
+    .viewer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      background: #1d4ed8;
+      color: white;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .file-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .file-tab {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .file-tab.active {
+      background: #14532d;
+      border-color: var(--active);
+    }
+
+    pre {
+      margin: 0;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      color: var(--accent);
+      white-space: pre-wrap;
+      overflow-x: auto;
+      min-height: 280px;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .effective {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      color: var(--accent);
+      white-space: pre-wrap;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      min-height: 150px;
+    }
+
+    .summary {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .viewer {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AuthZ Operation-Centric Rego Explorer</h1>
+    <p>
+      Grouped by register for navigation, but rendered per operation so you can inspect the actual routing path, active branch, participating files, and effective Rego logic.
+    </p>
+  </header>
+
+  <div class="topbar">
+    Select an operation. The page will show the full stack that participates in the decision, not just the obvious policy file.
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-group">
+      <h3>Bemiddelingsregister</h3>
+      <div class="button-wrap">
+        <button onclick="runOperation('bemiddeling')">bemiddeling</button>
+        <button onclick="runOperation('bemiddelingspecificatie')">bemiddelingspecificatie</button>
+        <button onclick="runOperation('client')">client</button>
+        <button onclick="runOperation('regiehouder')">regiehouder</button>
+        <button onclick="runOperation('overdracht')">overdracht</button>
+      </div>
+    </div>
+
+    <div class="toolbar-group">
+      <h3>Indicatieregister</h3>
+      <div class="button-wrap">
+        <button onclick="runOperation('wlzIndicatie')">wlzIndicatie</button>
+      </div>
+    </div>
+
+    <div class="toolbar-group">
+      <h3>Notificaties</h3>
+      <div class="button-wrap">
+        <button onclick="runOperation('zendMelding')">zendMelding</button>
+        <button onclick="runOperation('zendNotificatie')">zendNotificatie</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>Routing Flow</h2>
+      <div id="flow" class="flow"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Applicable Policy Stack</h2>
+      <div id="stack" class="stack"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Operation Metadata</h2>
+      <div id="metadata" class="meta">No operation selected yet.</div>
+    </section>
+
+    <section class="panel">
+      <h2>Active Branches</h2>
+      <div id="branches" class="branches"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Participating Rego Files</h2>
+      <div id="files" class="files"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Effective Policy</h2>
+      <div id="effectivePolicy" class="effective">// click an operation</div>
+    </section>
+
+    <section class="panel viewer">
+      <div class="viewer-top">
+        <h2 style="margin:0;">Rego Viewer</h2>
+        <span id="viewerBadge" class="badge">No file selected</span>
+      </div>
+      <div id="fileTabs" class="file-tabs"></div>
+      <pre id="regoViewer">// click an operation to inspect the involved files</pre>
+    </section>
+  </div>
+
+  <script>
+    const sharedFiles = {
+      "authz/main.rego": `package authz
+
+import rego.v1
+
+default allowed := false
+
+allowed if {
+  security.is_token_valid
+  count(global.error_messages) == 0
+  router.allow
+}
+
+body := {
+  "decision": "allow"
+} if allowed
+
+body := {
+  "decision": "deny",
+  "errors": global.error_messages
+} if not allowed`,
+      "authz/router/router.rego": `package authz.router
+
+import rego.v1
+
+allow if bemiddelingsregister.bemiddeling.allow
+allow if bemiddelingsregister.bemiddelingspecificatie.allow
+allow if bemiddelingsregister.client.allow
+allow if bemiddelingsregister.regiehouder.allow
+allow if bemiddelingsregister.overdracht.allow
+allow if indicatieregister.wlzindicatie.allow
+allow if notificaties.zendmelding.allow
+allow if notificaties.zendnotificatie.allow`,
+      "authz/global/global.rego": `package authz.global
+
+import rego.v1
+
+error_messages contains msg if {
+  not input.token
+  msg := "token is missing"
+}
+
+error_messages contains msg if {
+  not input.query_ast
+  msg := "query_ast is missing"
+}`,
+      "utils/security/token_validation.rego": `package utils.security
+
+import rego.v1
+
+is_token_valid if {
+  input.token.valid == true
+}`
+    };
+
+    const operations = {
+      bemiddeling: {
+        register: "bemiddelingsregister",
+        package: "bemiddelingsregister.bemiddeling",
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/bemiddeling/config/config.rego",
+          "bemiddelingsregister/bemiddeling/main.rego",
+          "bemiddelingsregister/bemiddeling/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/bemiddeling/config/config.rego",
+          "bemiddelingsregister/bemiddeling/main.rego",
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_uzovi_claim_is_required.rego",
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_is_required.rego",
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_has_valid_uzovi.rego"
+        ],
+        branches: [
+          { name: "standard_bemiddeling_path", active: true },
+          { name: "pip_instelling_path", active: false },
+          { name: "pip_zorgkantoor_path", active: false }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and count(global.error_messages) == 0
+  and router selects bemiddelingsregister.bemiddeling
+  and config.operation == "bemiddeling"
+  and common.contains_scope("registers/wlzbemiddelingsregister", global.token.scopes)
+  and (
+    standard_bemiddeling_path
+    or pip_instelling_path
+    or pip_zorgkantoor_path
+  )
+
+standard_bemiddeling_path if
+  verantwoordelijkzorgkantoor_uzovi_claim_is_required
+  and verantwoordelijkzorgkantoor_is_required
+  and verantwoordelijkzorgkantoor_has_valid_uzovi`,
+        files: {
+          ...sharedFiles,
+          "bemiddelingsregister/bemiddeling/config/config.rego": `package bemiddelingsregister.bemiddeling.config
+
+import rego.v1
+
+scope := "registers/wlzbemiddelingsregister"
+
+operation := _graphql.query_operation(global.query_ast, "bemiddeling")`,
+          "bemiddelingsregister/bemiddeling/main.rego": `package bemiddelingsregister.bemiddeling
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  common.contains_scope(config.scope, global.token.scopes)
+  rules.verantwoordelijkzorgkantoor_uzovi_claim_is_required
+  rules.verantwoordelijkzorgkantoor_is_required
+  rules.verantwoordelijkzorgkantoor_has_valid_uzovi
+}
+
+allow if {
+  config.operation
+  common.contains_scope(config.scope, global.token.scopes)
+  rules.wlzIndicatieID_is_required
+  rules.actor_must_be_vecozo
+  rules.only_specific_selections_allowed
+}`,
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_uzovi_claim_is_required.rego": `package bemiddelingsregister.bemiddeling.rules
+
+import rego.v1
+
+verantwoordelijkzorgkantoor_uzovi_claim_is_required if {
+  global.token.claims.uzovi != ""
+}`,
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_is_required.rego": `package bemiddelingsregister.bemiddeling.rules
+
+import rego.v1
+
+verantwoordelijkzorgkantoor_is_required if {
+  _graphql.where_required(global.query_ast, "verantwoordelijkZorgkantoor")
+}`,
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_has_valid_uzovi.rego": `package bemiddelingsregister.bemiddeling.rules
+
+import rego.v1
+
+verantwoordelijkzorgkantoor_has_valid_uzovi if {
+  requested := _graphql.where_eq_value(global.query_ast, "verantwoordelijkZorgkantoor")
+  requested == global.token.claims.uzovi
+}`
+        },
+        defaultFile: "bemiddelingsregister/bemiddeling/main.rego"
+      },
+
+      bemiddelingspecificatie: {
+        register: "bemiddelingsregister",
+        package: "bemiddelingsregister.bemiddelingspecificatie",
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/bemiddelingspecificatie/config/config.rego",
+          "bemiddelingsregister/bemiddelingspecificatie/main.rego",
+          "bemiddelingsregister/bemiddelingspecificatie/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/bemiddelingspecificatie/config/config.rego",
+          "bemiddelingsregister/bemiddelingspecificatie/main.rego",
+          "bemiddelingsregister/bemiddelingspecificatie/rules/scope_is_required.rego",
+          "bemiddelingsregister/bemiddelingspecificatie/rules/filter_is_valid.rego"
+        ],
+        branches: [
+          { name: "standard_bemiddelingspecificatie_path", active: true }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and count(global.error_messages) == 0
+  and router selects bemiddelingsregister.bemiddelingspecificatie
+  and config.operation == "bemiddelingspecificatie"
+  and scope_is_required
+  and filter_is_valid`,
+        files: {
+          ...sharedFiles,
+          "bemiddelingsregister/bemiddelingspecificatie/config/config.rego": `package bemiddelingsregister.bemiddelingspecificatie.config
+
+import rego.v1
+
+scope := "registers/wlzbemiddelingsregister"
+
+operation := _graphql.query_operation(global.query_ast, "bemiddelingspecificatie")`,
+          "bemiddelingsregister/bemiddelingspecificatie/main.rego": `package bemiddelingsregister.bemiddelingspecificatie
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  rules.scope_is_required
+  rules.filter_is_valid
+}`,
+          "bemiddelingsregister/bemiddelingspecificatie/rules/scope_is_required.rego": `package bemiddelingsregister.bemiddelingspecificatie.rules
+
+import rego.v1
+
+scope_is_required if {
+  global.token.scopes[_] == "registers/wlzbemiddelingsregister"
+}`,
+          "bemiddelingsregister/bemiddelingspecificatie/rules/filter_is_valid.rego": `package bemiddelingsregister.bemiddelingspecificatie.rules
+
+import rego.v1
+
+filter_is_valid if {
+  _graphql.where_required(global.query_ast, "bemiddelingID")
+}`
+        },
+        defaultFile: "bemiddelingsregister/bemiddelingspecificatie/main.rego"
+      },
+
+      client: {
+        register: "bemiddelingsregister",
+        package: "bemiddelingsregister.client",
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/client/config/config.rego",
+          "bemiddelingsregister/client/main.rego",
+          "bemiddelingsregister/client/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/client/config/config.rego",
+          "bemiddelingsregister/client/main.rego",
+          "bemiddelingsregister/client/rules/actor_is_allowed.rego",
+          "bemiddelingsregister/client/rules/scope_is_allowed.rego"
+        ],
+        branches: [
+          { name: "standard_client_query_path", active: true }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and no_global_errors
+  and router selects bemiddelingsregister.client
+  and config.operation == "client"
+  and actor_is_allowed
+  and scope_is_allowed`,
+        files: {
+          ...sharedFiles,
+          "bemiddelingsregister/client/config/config.rego": `package bemiddelingsregister.client.config
+
+import rego.v1
+
+scope := "registers/wlzbemiddelingsregister"
+
+operation := _graphql.query_operation(global.query_ast, "client")`,
+          "bemiddelingsregister/client/main.rego": `package bemiddelingsregister.client
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  rules.actor_is_allowed
+  rules.scope_is_allowed
+}`,
+          "bemiddelingsregister/client/rules/actor_is_allowed.rego": `package bemiddelingsregister.client.rules
+
+import rego.v1
+
+actor_is_allowed if {
+  global.token.claims.instantie_type == "zorgkantoor"
+}`,
+          "bemiddelingsregister/client/rules/scope_is_allowed.rego": `package bemiddelingsregister.client.rules
+
+import rego.v1
+
+scope_is_allowed if {
+  global.token.scopes[_] == "registers/wlzbemiddelingsregister"
+}`
+        },
+        defaultFile: "bemiddelingsregister/client/main.rego"
+      },
+
+      regiehouder: {
+        register: "bemiddelingsregister",
+        package: "bemiddelingsregister.regiehouder",
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/regiehouder/config/config.rego",
+          "bemiddelingsregister/regiehouder/main.rego",
+          "bemiddelingsregister/regiehouder/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/regiehouder/config/config.rego",
+          "bemiddelingsregister/regiehouder/main.rego",
+          "bemiddelingsregister/regiehouder/rules/role_is_allowed.rego"
+        ],
+        branches: [
+          { name: "standard_regiehouder_path", active: true }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and no_global_errors
+  and router selects bemiddelingsregister.regiehouder
+  and config.operation == "regiehouder"
+  and role_is_allowed`,
+        files: {
+          ...sharedFiles,
+          "bemiddelingsregister/regiehouder/config/config.rego": `package bemiddelingsregister.regiehouder.config
+
+import rego.v1
+
+operation := _graphql.query_operation(global.query_ast, "regiehouder")`,
+          "bemiddelingsregister/regiehouder/main.rego": `package bemiddelingsregister.regiehouder
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  rules.role_is_allowed
+}`,
+          "bemiddelingsregister/regiehouder/rules/role_is_allowed.rego": `package bemiddelingsregister.regiehouder.rules
+
+import rego.v1
+
+role_is_allowed if {
+  global.token.claims.role == "bemiddelaar"
+}`
+        },
+        defaultFile: "bemiddelingsregister/regiehouder/main.rego"
+      },
+
+      overdracht: {
+        register: "bemiddelingsregister",
+        package: "bemiddelingsregister.overdracht",
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/overdracht/config/config.rego",
+          "bemiddelingsregister/overdracht/main.rego",
+          "bemiddelingsregister/overdracht/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/overdracht/config/config.rego",
+          "bemiddelingsregister/overdracht/main.rego",
+          "bemiddelingsregister/overdracht/rules/scope_is_allowed.rego",
+          "bemiddelingsregister/overdracht/rules/action_matches.rego"
+        ],
+        branches: [
+          { name: "standard_overdracht_path", active: true }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and no_global_errors
+  and router selects bemiddelingsregister.overdracht
+  and config.operation == "overdracht"
+  and scope_is_allowed
+  and action_matches`,
+        files: {
+          ...sharedFiles,
+          "bemiddelingsregister/overdracht/config/config.rego": `package bemiddelingsregister.overdracht.config
+
+import rego.v1
+
+operation := _graphql.query_operation(global.query_ast, "overdracht")`,
+          "bemiddelingsregister/overdracht/main.rego": `package bemiddelingsregister.overdracht
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  rules.scope_is_allowed
+  rules.action_matches
+}`,
+          "bemiddelingsregister/overdracht/rules/scope_is_allowed.rego": `package bemiddelingsregister.overdracht.rules
+
+import rego.v1
+
+scope_is_allowed if {
+  global.token.scopes[_] == "registers/wlzbemiddelingsregister"
+}`,
+          "bemiddelingsregister/overdracht/rules/action_matches.rego": `package bemiddelingsregister.overdracht.rules
+
+import rego.v1
+
+action_matches if {
+  input.action == "read"
+}`
+        },
+        defaultFile: "bemiddelingsregister/overdracht/main.rego"
+      },
+
+      wlzIndicatie: {
+        register: "indicatieregister",
+        package: "indicatieregister.wlzindicatie",
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "indicatieregister/wlzindicatie/config/config.rego",
+          "indicatieregister/wlzindicatie/main.rego",
+          "indicatieregister/wlzindicatie/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "indicatieregister/wlzindicatie/config/config.rego",
+          "indicatieregister/wlzindicatie/main.rego",
+          "indicatieregister/wlzindicatie/rules/actor_type_is_allowed.rego",
+          "indicatieregister/wlzindicatie/rules/purpose_of_use_is_allowed.rego"
+        ],
+        branches: [
+          { name: "standard_wlzIndicatie_query_path", active: true }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and count(global.error_messages) == 0
+  and router selects indicatieregister.wlzindicatie
+  and config.operation == "wlzIndicatie"
+  and common.contains_scope("registers/wlzindicatieregister", global.token.scopes)
+  and actor_type_is_allowed
+  and purpose_of_use_is_allowed`,
+        files: {
+          ...sharedFiles,
+          "indicatieregister/wlzindicatie/config/config.rego": `package indicatieregister.wlzindicatie.config
+
+import rego.v1
+
+scope := "registers/wlzindicatieregister"
+
+operation := _graphql.query_operation(global.query_ast, "wlzIndicatie")`,
+          "indicatieregister/wlzindicatie/main.rego": `package indicatieregister.wlzindicatie
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  common.contains_scope(config.scope, global.token.scopes)
+  rules.actor_type_is_allowed
+  rules.purpose_of_use_is_allowed
+}`,
+          "indicatieregister/wlzindicatie/rules/actor_type_is_allowed.rego": `package indicatieregister.wlzindicatie.rules
+
+import rego.v1
+
+actor_type_is_allowed if {
+  global.token.claims.instantie_type == "zorgkantoor"
+}`,
+          "indicatieregister/wlzindicatie/rules/purpose_of_use_is_allowed.rego": `package indicatieregister.wlzindicatie.rules
+
+import rego.v1
+
+purpose_of_use_is_allowed if {
+  input.context.purpose_of_use == "indicatie"
+}`
+        },
+        defaultFile: "indicatieregister/wlzindicatie/main.rego"
+      },
+
+      zendMelding: {
+        register: "notificaties",
+        package: "notificaties.zendmelding",
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "notificaties/zendmelding/config/config.rego",
+          "notificaties/zendmelding/main.rego",
+          "notificaties/zendmelding/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "notificaties/zendmelding/config/config.rego",
+          "notificaties/zendmelding/main.rego",
+          "notificaties/zendmelding/rules/scope_is_allowed.rego"
+        ],
+        branches: [
+          { name: "standard_zendmelding_path", active: true }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and no_global_errors
+  and router selects notificaties.zendmelding
+  and config.operation == "zendMelding"
+  and scope_is_allowed`,
+        files: {
+          ...sharedFiles,
+          "notificaties/zendmelding/config/config.rego": `package notificaties.zendmelding.config
+
+import rego.v1
+
+operation := _graphql.mutation_operation(global.query_ast, "zendMelding")`,
+          "notificaties/zendmelding/main.rego": `package notificaties.zendmelding
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  rules.scope_is_allowed
+}`,
+          "notificaties/zendmelding/rules/scope_is_allowed.rego": `package notificaties.zendmelding.rules
+
+import rego.v1
+
+scope_is_allowed if {
+  global.token.scopes[_] == "notificaties.send"
+}`
+        },
+        defaultFile: "notificaties/zendmelding/main.rego"
+      },
+
+      zendNotificatie: {
+        register: "notificaties",
+        package: "notificaties.zendnotificatie",
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "notificaties/zendnotificatie/config/config.rego",
+          "notificaties/zendnotificatie/main.rego",
+          "notificaties/zendnotificatie/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "notificaties/zendnotificatie/config/config.rego",
+          "notificaties/zendnotificatie/main.rego",
+          "notificaties/zendnotificatie/rules/scope_is_allowed.rego",
+          "notificaties/zendnotificatie/rules/action_is_create.rego"
+        ],
+        branches: [
+          { name: "standard_notification_send_path", active: true }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and count(global.error_messages) == 0
+  and router selects notificaties.zendnotificatie
+  and config.operation == "zendNotificatie"
+  and scope_is_allowed
+  and action_is_create`,
+        files: {
+          ...sharedFiles,
+          "notificaties/zendnotificatie/config/config.rego": `package notificaties.zendnotificatie.config
+
+import rego.v1
+
+operation := _graphql.mutation_operation(global.query_ast, "zendNotificatie")`,
+          "notificaties/zendnotificatie/main.rego": `package notificaties.zendnotificatie
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  rules.scope_is_allowed
+  rules.action_is_create
+}`,
+          "notificaties/zendnotificatie/rules/scope_is_allowed.rego": `package notificaties.zendnotificatie.rules
+
+import rego.v1
+
+scope_is_allowed if {
+  global.token.scopes[_] == "notificaties.send"
+}`,
+          "notificaties/zendnotificatie/rules/action_is_create.rego": `package notificaties.zendnotificatie.rules
+
+import rego.v1
+
+action_is_create if {
+  input.action == "create"
+}`
+        },
+        defaultFile: "notificaties/zendnotificatie/main.rego"
+      }
+    };
+
+    let currentOperation = null;
+
+    function setItems(containerId, items, formatter = x => x) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      items.forEach((item, idx) => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = formatter(item);
+        container.appendChild(div);
+        setTimeout(() => div.classList.add("active"), 90 * (idx + 1));
+      });
+    }
+
+    function showFile(fileName) {
+      if (!currentOperation) return;
+      const op = operations[currentOperation];
+      document.getElementById("regoViewer").textContent = op.files[fileName] || "// file not found";
+      document.getElementById("viewerBadge").textContent = fileName;
+
+      document.querySelectorAll(".file-tab").forEach(tab => {
+        tab.classList.toggle("active", tab.dataset.file === fileName);
+      });
+
+      document.querySelectorAll("#files .item").forEach(el => {
+        el.classList.toggle("active", el.dataset.file === fileName);
+      });
+    }
+
+    function renderFileTabs(files, defaultFile) {
+      const tabs = document.getElementById("fileTabs");
+      tabs.innerHTML = "";
+
+      Object.keys(files).forEach(file => {
+        const btn = document.createElement("button");
+        btn.className = "file-tab" + (file === defaultFile ? " active" : "");
+        btn.dataset.file = file;
+        btn.textContent = shorten(file);
+        btn.onclick = () => showFile(file);
+        tabs.appendChild(btn);
+      });
+    }
+
+    function shorten(file) {
+      const p = file.split("/");
+      return p.length > 2 ? p.slice(-2).join("/") : file;
+    }
+
+    function runOperation(name) {
+      currentOperation = name;
+      const op = operations[name];
+
+      setItems("flow", op.route, x => x);
+      setItems("stack", op.stack, x => x);
+      setItems("branches", op.branches, x => x.name + (x.active ? " &larr; active" : ""));
+      setItems("files", Object.keys(op.files), x => x);
+
+      Array.from(document.querySelectorAll("#files .item")).forEach((el, idx) => {
+        const fileName = Object.keys(op.files)[idx];
+        el.dataset.file = fileName;
+        el.onclick = () => showFile(fileName);
+      });
+
+      document.getElementById("effectivePolicy").textContent = op.effectivePolicy;
+      document.getElementById("metadata").innerHTML = `
+        <strong>Register:</strong> ${op.register}<br>
+        <strong>Operation:</strong> ${name}<br>
+        <strong>Primary package:</strong> ${op.package}<br>
+        <strong>Rendered mode:</strong> per operation<br>
+        <strong>Important:</strong> the final decision depends on shared layers, router selection, operation config, main package logic, and rule/helper files.
+      `;
+
+      renderFileTabs(op.files, op.defaultFile);
+      showFile(op.defaultFile);
+    }
+  </script>
+</body>
+</html>

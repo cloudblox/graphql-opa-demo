@@ -1,7 +1,8 @@
 services:
-  app:
+  graphql:
     build:
       context: ./app
+    command: ["node", "index.js"]
     environment:
       PORT: "4000"
       OPA_URL: http://opa:8181/v1/data/authz/result
@@ -9,6 +10,19 @@ services:
       - "4000:4000"
     depends_on:
       - opa
+
+  graphql-authz:
+    build:
+      context: ./app
+    command: ["node", "index_authz.js"]
+    environment:
+      PORT: "4001"
+      OPA_URL: http://opa:8181/v1/data/authz/result
+    ports:
+      - "4001:4001"
+    depends_on:
+      - opa
+
 
   opa:
     image: openpolicyagent/opa:1.2.0-static

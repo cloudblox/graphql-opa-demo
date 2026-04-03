@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuthZ Routing + Policy Stack Demo</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1e293b;
+      --muted: #94a3b8;
+      --text: #e5e7eb;
+      --accent: #38bdf8;
+      --active: #22c55e;
+      --warn: #f59e0b;
+      --border: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      background: #0b1220;
+    }
+
+    header h1 {
+      margin: 0 0 8px 0;
+      font-size: 28px;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      padding: 20px 24px 8px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #2563eb;
+      color: white;
+      border: 0;
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    button:hover {
+      opacity: 0.95;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1.1fr 1.2fr;
+      gap: 16px;
+      padding: 16px 24px 24px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      min-height: 220px;
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    .flow {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .flow-item,
+    .list-item,
+    .branch-item,
+    .file-item {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      transition: all 0.25s ease;
+    }
+
+    .flow-item.active,
+    .list-item.active,
+    .branch-item.active,
+    .file-item.active {
+      background: #14532d;
+      border-color: var(--active);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.35) inset;
+    }
+
+    .flow-arrow {
+      color: var(--muted);
+      margin-left: 8px;
+      font-size: 20px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .small {
+      font-size: 13px;
+    }
+
+    .branches,
+    .files,
+    .stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .effective {
+      white-space: pre-wrap;
+      background: #020617;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      color: var(--accent);
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+
+    .viewer {
+      grid-column: 1 / span 3;
+    }
+
+    .viewer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #1d4ed8;
+      color: white;
+    }
+
+    .file-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 12px 0 14px;
+    }
+
+    .file-tab {
+      background: #1e293b;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .file-tab.active {
+      background: #14532d;
+      border-color: var(--active);
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      background: #020617;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      color: var(--accent);
+      font-family: Consolas, Monaco, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+      min-height: 280px;
+      overflow-x: auto;
+    }
+
+    .legend {
+      padding: 0 24px 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1100px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .viewer {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AuthZ Routing + Policy Stack Demo</h1>
+    <p>
+      Click an operation to show the full policy path: entrypoint, router, branch, participating Rego files, and effective decision logic.
+    </p>
+  </header>
+
+  <div class="toolbar">
+    <button onclick="runOperation('bemiddeling')">bemiddeling</button>
+    <button onclick="runOperation('wlzIndicatie')">wlzIndicatie</button>
+    <button onclick="runOperation('zendNotificatie')">zendNotificatie</button>
+  </div>
+
+  <div class="legend">
+    This version shows that authorization is not one file, but a stack of implicit and explicit policies.
+  </div>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>Routing Flow</h2>
+      <div class="flow" id="flow"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Applicable Policy Stack</h2>
+      <div class="stack" id="stack"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Active Branch + Effective Policy</h2>
+      <div class="branches" id="branches"></div>
+      <div style="height: 12px;"></div>
+      <div class="effective" id="effectivePolicy">// click an operation</div>
+    </section>
+
+    <section class="panel">
+      <h2>Participating Rego Files</h2>
+      <div class="files" id="files"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Decision Summary</h2>
+      <div id="decisionSummary" class="small muted">
+        Click an operation to render the policy stack.
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Selected Route</h2>
+      <div id="selectedRoute" class="small muted">
+        No operation selected yet.
+      </div>
+    </section>
+
+    <section class="panel viewer">
+      <div class="viewer-header">
+        <h2 style="margin:0;">Rego Viewer</h2>
+        <span class="badge" id="viewerBadge">No file selected</span>
+      </div>
+      <div class="file-list" id="fileTabs"></div>
+      <pre id="regoViewer">// click an operation to load the files involved</pre>
+    </section>
+  </div>
+
+  <script>
+    const operations = {
+      bemiddeling: {
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/*",
+          "authz/router/router.rego",
+          "bemiddelingsregister/bemiddeling/config/config.rego",
+          "bemiddelingsregister/bemiddeling/main.rego",
+          "bemiddelingsregister/bemiddeling/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "bemiddelingsregister/bemiddeling/config/config.rego",
+          "bemiddelingsregister/bemiddeling/main.rego",
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_uzovi_claim_is_required.rego",
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_is_required.rego",
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_has_valid_uzovi.rego"
+        ],
+        branches: [
+          {
+            name: "standard_bemiddeling_path",
+            active: true
+          },
+          {
+            name: "pip_instelling_path",
+            active: false
+          },
+          {
+            name: "pip_zorgkantoor_path",
+            active: false
+          }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and count(global.error_messages) == 0
+  and router selects bemiddelingsregister.bemiddeling
+  and config.operation == "bemiddeling"
+  and common.contains_scope("registers/wlzbemiddelingsregister", global.token.scopes)
+  and (
+    standaard_pad
+    or pip_instelling_pad
+    or pip_zorgkantoor_pad
+  )
+
+standaard_pad if
+  verantwoordelijkzorgkantoor_uzovi_claim_is_required
+  and verantwoordelijkzorgkantoor_is_required
+  and verantwoordelijkzorgkantoor_has_valid_uzovi`,
+        files: {
+          "authz/main.rego": `package authz
+
+import rego.v1
+
+default allowed := false
+
+allowed if {
+  security.is_token_valid
+  count(global.error_messages) == 0
+  router.allow
+}
+
+body := {
+  "decision": "allow"
+} if allowed
+
+body := {
+  "decision": "deny",
+  "errors": global.error_messages
+} if not allowed`,
+          "authz/router/router.rego": `package authz.router
+
+import rego.v1
+
+allow if bemiddelingsregister.bemiddeling.allow
+allow if indicatieregister.wlzindicatie.allow
+allow if notificaties.zendnotificatie.allow`,
+          "bemiddelingsregister/bemiddeling/config/config.rego": `package bemiddelingsregister.bemiddeling.config
+
+import rego.v1
+
+scope := "registers/wlzbemiddelingsregister"
+
+operation := _graphql.query_operation(global.query_ast, "bemiddeling")`,
+          "bemiddelingsregister/bemiddeling/main.rego": `package bemiddelingsregister.bemiddeling
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  common.contains_scope(config.scope, global.token.scopes)
+  rules.verantwoordelijkzorgkantoor_uzovi_claim_is_required
+  rules.verantwoordelijkzorgkantoor_is_required
+  rules.verantwoordelijkzorgkantoor_has_valid_uzovi
+}
+
+allow if {
+  config.operation
+  common.contains_scope(config.scope, global.token.scopes)
+  rules.wlzIndicatieID_is_required
+  rules.actor_must_be_vecozo
+  rules.only_specific_selections_allowed
+}`,
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_uzovi_claim_is_required.rego": `package bemiddelingsregister.bemiddeling.rules
+
+import rego.v1
+
+verantwoordelijkzorgkantoor_uzovi_claim_is_required if {
+  global.token.claims.uzovi != ""
+}`,
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_is_required.rego": `package bemiddelingsregister.bemiddeling.rules
+
+import rego.v1
+
+verantwoordelijkzorgkantoor_is_required if {
+  _graphql.where_required(global.query_ast, "verantwoordelijkZorgkantoor")
+}`,
+          "bemiddelingsregister/bemiddeling/rules/verantwoordelijkzorgkantoor_has_valid_uzovi.rego": `package bemiddelingsregister.bemiddeling.rules
+
+import rego.v1
+
+verantwoordelijkzorgkantoor_has_valid_uzovi if {
+  requested := _graphql.where_eq_value(global.query_ast, "verantwoordelijkZorgkantoor")
+  requested == global.token.claims.uzovi
+}`
+        },
+        defaultFile: "bemiddelingsregister/bemiddeling/main.rego",
+        decisionSummary: `
+Operation: bemiddeling
+Decision path: request -> global checks -> token validation -> router -> config.operation -> scope -> active branch -> rule files
+Important nuance: multiple allow branches may apply; the standard path is only one of them.
+        `
+      },
+
+      wlzIndicatie: {
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/*",
+          "authz/router/router.rego",
+          "indicatieregister/wlzindicatie/config/config.rego",
+          "indicatieregister/wlzindicatie/main.rego",
+          "indicatieregister/wlzindicatie/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "indicatieregister/wlzindicatie/config/config.rego",
+          "indicatieregister/wlzindicatie/main.rego",
+          "indicatieregister/wlzindicatie/rules/actor_type_is_allowed.rego",
+          "indicatieregister/wlzindicatie/rules/purpose_of_use_is_allowed.rego"
+        ],
+        branches: [
+          {
+            name: "standard_wlzIndicatie_query_path",
+            active: true
+          },
+          {
+            name: "specialized_actor_branch",
+            active: false
+          }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and count(global.error_messages) == 0
+  and router selects indicatieregister.wlzindicatie
+  and config.operation == "wlzIndicatie"
+  and common.contains_scope("registers/wlzindicatieregister", global.token.scopes)
+  and actor_type_is_allowed
+  and purpose_of_use_is_allowed`,
+        files: {
+          "authz/main.rego": `package authz
+
+import rego.v1
+
+allowed if {
+  security.is_token_valid
+  count(global.error_messages) == 0
+  router.allow
+}`,
+          "authz/router/router.rego": `package authz.router
+
+import rego.v1
+
+allow if bemiddelingsregister.bemiddeling.allow
+allow if indicatieregister.wlzindicatie.allow
+allow if notificaties.zendnotificatie.allow`,
+          "indicatieregister/wlzindicatie/config/config.rego": `package indicatieregister.wlzindicatie.config
+
+import rego.v1
+
+scope := "registers/wlzindicatieregister"
+
+operation := _graphql.query_operation(global.query_ast, "wlzIndicatie")`,
+          "indicatieregister/wlzindicatie/main.rego": `package indicatieregister.wlzindicatie
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  common.contains_scope(config.scope, global.token.scopes)
+  rules.actor_type_is_allowed
+  rules.purpose_of_use_is_allowed
+}`,
+          "indicatieregister/wlzindicatie/rules/actor_type_is_allowed.rego": `package indicatieregister.wlzindicatie.rules
+
+import rego.v1
+
+actor_type_is_allowed if {
+  global.token.claims.instantie_type == "zorgkantoor"
+}`,
+          "indicatieregister/wlzindicatie/rules/purpose_of_use_is_allowed.rego": `package indicatieregister.wlzindicatie.rules
+
+import rego.v1
+
+purpose_of_use_is_allowed if {
+  input.context.purpose_of_use == "indicatie"
+}`
+        },
+        defaultFile: "indicatieregister/wlzindicatie/main.rego",
+        decisionSummary: `
+Operation: wlzIndicatie
+Decision path: request -> global checks -> token validation -> router -> operation match -> scope -> actor checks -> purpose-of-use checks -> decision
+        `
+      },
+
+      zendNotificatie: {
+        route: [
+          "Incoming request",
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/*",
+          "authz/router/router.rego",
+          "notificaties/zendnotificatie/config/config.rego",
+          "notificaties/zendnotificatie/main.rego",
+          "notificaties/zendnotificatie/rules/*.rego",
+          "Decision"
+        ],
+        stack: [
+          "authz/main.rego",
+          "authz/global/global.rego",
+          "utils/security/token_validation.rego",
+          "authz/router/router.rego",
+          "notificaties/zendnotificatie/config/config.rego",
+          "notificaties/zendnotificatie/main.rego",
+          "notificaties/zendnotificatie/rules/scope_is_allowed.rego",
+          "notificaties/zendnotificatie/rules/action_is_create.rego"
+        ],
+        branches: [
+          {
+            name: "standard_notification_send_path",
+            active: true
+          }
+        ],
+        effectivePolicy: `allow if
+  token_valid
+  and count(global.error_messages) == 0
+  and router selects notificaties.zendnotificatie
+  and config.operation == "zendNotificatie"
+  and scope_is_allowed
+  and action_is_create`,
+        files: {
+          "authz/main.rego": `package authz
+
+import rego.v1
+
+allowed if {
+  security.is_token_valid
+  count(global.error_messages) == 0
+  router.allow
+}`,
+          "authz/router/router.rego": `package authz.router
+
+import rego.v1
+
+allow if bemiddelingsregister.bemiddeling.allow
+allow if indicatieregister.wlzindicatie.allow
+allow if notificaties.zendnotificatie.allow`,
+          "notificaties/zendnotificatie/config/config.rego": `package notificaties.zendnotificatie.config
+
+import rego.v1
+
+operation := _graphql.mutation_operation(global.query_ast, "zendNotificatie")`,
+          "notificaties/zendnotificatie/main.rego": `package notificaties.zendnotificatie
+
+import rego.v1
+
+default allow := false
+
+allow if {
+  config.operation
+  rules.scope_is_allowed
+  rules.action_is_create
+}`,
+          "notificaties/zendnotificatie/rules/scope_is_allowed.rego": `package notificaties.zendnotificatie.rules
+
+import rego.v1
+
+scope_is_allowed if {
+  global.token.scopes[_] == "notificaties.send"
+}`,
+          "notificaties/zendnotificatie/rules/action_is_create.rego": `package notificaties.zendnotificatie.rules
+
+import rego.v1
+
+action_is_create if {
+  input.action == "create"
+}`
+        },
+        defaultFile: "notificaties/zendnotificatie/main.rego",
+        decisionSummary: `
+Operation: zendNotificatie
+Decision path: request -> global checks -> token validation -> router -> operation match -> notification-specific rules -> decision
+        `
+      }
+    };
+
+    let currentOperation = null;
+
+    function clearContainers() {
+      document.getElementById("flow").innerHTML = "";
+      document.getElementById("stack").innerHTML = "";
+      document.getElementById("branches").innerHTML = "";
+      document.getElementById("files").innerHTML = "";
+      document.getElementById("fileTabs").innerHTML = "";
+    }
+
+    function renderList(containerId, items, className, animate = true, activePredicate = null) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+
+      items.forEach((item, index) => {
+        const div = document.createElement("div");
+        div.className = className;
+        div.textContent = typeof item === "string" ? item : item.name;
+        container.appendChild(div);
+
+        if (animate) {
+          setTimeout(() => {
+            div.classList.add("active");
+          }, 180 * (index + 1));
+        } else if (activePredicate && activePredicate(item)) {
+          div.classList.add("active");
+        }
+      });
+    }
+
+    function renderFlow(route) {
+      const container = document.getElementById("flow");
+      container.innerHTML = "";
+      route.forEach((step, index) => {
+        const item = document.createElement("div");
+        item.className = "flow-item";
+        item.textContent = step;
+        container.appendChild(item);
+
+        if (index < route.length - 1) {
+          const arrow = document.createElement("div");
+          arrow.className = "flow-arrow";
+          arrow.textContent = "↓";
+          container.appendChild(arrow);
+        }
+
+        setTimeout(() => {
+          item.classList.add("active");
+        }, 200 * (index + 1));
+      });
+    }
+
+    function renderStack(stack) {
+      const container = document.getElementById("stack");
+      container.innerHTML = "";
+      stack.forEach((entry, index) => {
+        const div = document.createElement("div");
+        div.className = "list-item";
+        div.textContent = entry;
+        container.appendChild(div);
+        setTimeout(() => {
+          div.classList.add("active");
+        }, 140 * (index + 1));
+      });
+    }
+
+    function renderBranches(branches) {
+      const container = document.getElementById("branches");
+      container.innerHTML = "";
+      branches.forEach((branch, index) => {
+        const div = document.createElement("div");
+        div.className = "branch-item";
+        div.textContent = branch.name + (branch.active ? "  ← active" : "");
+        container.appendChild(div);
+        setTimeout(() => {
+          if (branch.active) div.classList.add("active");
+        }, 220 * (index + 1));
+      });
+    }
+
+    function renderFiles(files, defaultFile) {
+      const container = document.getElementById("files");
+      const tabs = document.getElementById("fileTabs");
+      container.innerHTML = "";
+      tabs.innerHTML = "";
+
+      Object.keys(files).forEach((file, index) => {
+        const div = document.createElement("div");
+        div.className = "file-item" + (file === defaultFile ? " active" : "");
+        div.textContent = file;
+        div.onclick = () => showFile(file);
+        container.appendChild(div);
+
+        const tab = document.createElement("button");
+        tab.className = "file-tab" + (file === defaultFile ? " active" : "");
+        tab.textContent = shortenFileName(file);
+        tab.onclick = () => showFile(file);
+        tabs.appendChild(tab);
+
+        setTimeout(() => {
+          div.classList.add("active");
+        }, 100 * (index + 1));
+      });
+    }
+
+    function shortenFileName(file) {
+      const parts = file.split("/");
+      if (parts.length <= 2) return file;
+      return parts.slice(-2).join("/");
+    }
+
+    function showFile(file) {
+      if (!currentOperation) return;
+      const op = operations[currentOperation];
+      document.getElementById("regoViewer").textContent = op.files[file] || "// file not found";
+      document.getElementById("viewerBadge").textContent = file;
+
+      document.querySelectorAll(".file-tab").forEach(btn => {
+        btn.classList.toggle("active", btn.textContent === shortenFileName(file));
+      });
+
+      document.querySelectorAll(".file-item").forEach(div => {
+        div.classList.toggle("active", div.textContent === file);
+      });
+    }
+
+    function runOperation(name) {
+      currentOperation = name;
+      const op = operations[name];
+      clearContainers();
+
+      renderFlow(op.route);
+      renderStack(op.stack);
+      renderBranches(op.branches);
+      renderFiles(op.files, op.defaultFile);
+
+      document.getElementById("effectivePolicy").textContent = op.effectivePolicy.trim();
+      document.getElementById("decisionSummary").textContent = op.decisionSummary.trim();
+      document.getElementById("selectedRoute").innerHTML =
+        "<strong>Operation:</strong> " + name +
+        "<br><strong>Primary package:</strong> " + op.defaultFile.replace("/main.rego", "") +
+        "<br><strong>Important:</strong> the final decision depends on global, router, config, helper, and rule layers.";
+
+      showFile(op.defaultFile);
+    }
+  </script>
+</body>
+</html>
